@@ -5,32 +5,44 @@ class BaseTextAnalyticsProvider:
     async def analyze(self, text: str, task: str = "summarization") -> Dict[str, Any]:
         raise NotImplementedError
 
-class OpenAITextAnalyticsProvider(BaseTextAnalyticsProvider):
-    def __init__(self, api_key: str):
-        self.api_key = api_key
+class LocalLLMTextAnalyticsProvider(BaseTextAnalyticsProvider):
+    def __init__(self, endpoint: str):
+        if not endpoint or endpoint.strip() == "":
+            raise ValueError("Local LLM endpoint is required and cannot be empty")
+        self.endpoint = endpoint.strip()
 
     async def analyze(self, text: str, task: str = "summarization") -> Dict[str, Any]:
-        # Example for OpenAI GPT-3.5/4 API (pseudo-code, replace with actual endpoint)
-        url = "https://api.openai.com/v1/chat/completions"
-        headers = {"Authorization": f"Bearer {self.api_key}"}
-        prompt = f"Perform {task} on: {text}"
+        if not text or text.strip() == "":
+            raise ValueError("Text input cannot be empty")
         payload = {
-            "model": "gpt-3.5-turbo",
-            "messages": [{"role": "user", "content": prompt}],
-            "max_tokens": 256
+            "prompt": f"Perform {task} on the following text: {text}",
+            "max_tokens": 256,
+            "temperature": 0.7
         }
-        async with httpx.AsyncClient() as client:
-            response = await client.post(url, json=payload, headers=headers)
-            response.raise_for_status()
-            result = response.json()
-            # Extract result from OpenAI response
-            output = result["choices"][0]["message"]["content"]
-            return {"task": task, "result": output}
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.post(self.endpoint, json=payload)
+                response.raise_for_status()
+                result = response.json()
+                output = result.get("response") or result.get("result") or str(result)
+                return {
+                    "task": task,
+                    "result": output,
+                    "provider": "local",
+                    "endpoint": self.endpoint
+                }
+        except httpx.HTTPStatusError as e:
+            raise ValueError(f"Local LLM error: {e.response.status_code} - {e.response.text}")
+        except httpx.TimeoutException:
+            raise ValueError("Local LLM request timed out")
+        except Exception as e:
+            raise ValueError(f"Local LLM request failed: {str(e)}")
 
-# Add more providers here (e.g., HuggingFace, Azure OpenAI, Local LLM)
+def get_text_analytics_provider(endpoint: str) -> BaseTextAnalyticsProvider:
 
-def get_text_analytics_provider(provider_name: str, **kwargs) -> BaseTextAnalyticsProvider:
-    if provider_name == "openai":
-        return OpenAITextAnalyticsProvider(api_key=kwargs.get("api_key"))
-    # Add more provider selection logic here
-    raise ValueError("Unsupported provider")
+
+    print(f"Creating Local LLM Text Analytics Provider with endpoint: {endpoint}")
+
+    if not endpoint:
+        raise ValueError("Local LLM endpoint is required")
+    return LocalLLMTextAnalyticsProvider(endpoint=endpoint)
