@@ -28,8 +28,6 @@
 1. From your project root, run:
    ```bash
    python backend/app/init_db.py
-   or
-   python -m backend.app.init_db
    ```
    If you see an ImportError about relative imports, ensure you use absolute imports in `init_db.py`:
    ```python
@@ -61,8 +59,9 @@
    ```
 3. Install dependencies inside the virtual environment:
    ```bash
-   pip install fastapi uvicorn sqlalchemy python-jose python-multipart
+   pip install fastapi uvicorn sqlalchemy python-jose python-multipart "passlib[bcrypt]"
    ```
+   **Tip:** If you use zsh and see `zsh: no matches found: passlib[bcrypt]`, wrap the package name in quotes as shown above.
 
 ### Running the Backend (Development)
 

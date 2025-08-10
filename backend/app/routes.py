@@ -1,13 +1,16 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Body
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
+from sqlalchemy import text
 from typing import List, Dict, Any
 from pydantic import BaseModel, Field
+from passlib.context import CryptContext
 from .database import get_db
 from .models import User
 from .auth import authenticate_user, create_access_token, get_current_user
 
 router = APIRouter()
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 class RegisterRequest(BaseModel):
     username: str = Field(..., example="johndoe")
@@ -41,12 +44,13 @@ def health_check():
 @router.post("/register", summary="Register User", response_description="User registration status")
 def register(request: RegisterRequest, db: Session = Depends(get_db)):
     """
-    Registers a new user.
+    Registers a new user with hashed password.
     """
     user = db.query(User).filter((User.username == request.username) | (User.email == request.email)).first()
     if user:
         raise HTTPException(status_code=400, detail="Username or email already registered")
-    new_user = User(username=request.username, email=request.email, hashed_password=request.password)
+    hashed_password = pwd_context.hash(request.password)
+    new_user = User(username=request.username, email=request.email, hashed_password=hashed_password)
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
@@ -76,7 +80,7 @@ def execute_query(request: QueryRequest, db: Session = Depends(get_db), current_
     Executes a raw SQL query and returns the result.
     """
     try:
-        result = db.execute(request.query)
+        result = db.execute(text(request.query))
         rows = result.fetchall()
         columns = result.keys()
         data = [dict(zip(columns, row)) for row in rows]

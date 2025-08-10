@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.5] - 2025-08-10
+
+### Security
+- Updated `/register` endpoint in [`backend/app/routes.py`](backend/app/routes.py:1) to hash passwords using bcrypt via passlib before storing in the database.
+
+## [0.1.4] - 2025-08-10
+
+### Fixed
+- Updated `/db/query` endpoint in [`backend/app/routes.py`](backend/app/routes.py:1) to wrap raw SQL queries with `sqlalchemy.text()` for compatibility with SQLAlchemy and to resolve Bad Request errors.
+
 ## [0.1.3] - 2025-08-10
 
 ### Enhanced
