@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.3] - 2025-08-10
+
+### Enhanced
+- Added OpenAPI-compliant request/response models and docstrings to all API endpoints in [`backend/app/routes.py`](backend/app/routes.py:1) for proper Swagger documentation.
+
+## [0.1.2] - 2025-08-10
+
+### Added
+- Implemented all major API endpoints in [`backend/app/routes.py`](backend/app/routes.py:1):
+  - Health check
+  - User registration, login, user info
+  - Database query execution
+  - Text analytics (placeholder)
+  - Graphical analytics (placeholder)
+  - Plugin registration and execution (placeholder)
+  - Role management
+
+## [0.1.1] - 2025-08-10
+
+### Fixed
+- Added `get_db` dependency function to [`backend/app/database.py`](backend/app/database.py:10) for proper DB session management and to resolve ImportError in API routes.
+
 ## [0.1.0] - 2025-08-10
 
 ### Added
