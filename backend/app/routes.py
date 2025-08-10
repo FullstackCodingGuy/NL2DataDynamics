@@ -5,9 +5,12 @@ from sqlalchemy import text
 from typing import List, Dict, Any
 from pydantic import BaseModel, Field
 from passlib.context import CryptContext
+import os
+import asyncio
 from .database import get_db
 from .models import User
 from .auth import authenticate_user, create_access_token, get_current_user
+from .analytics_providers import get_text_analytics_provider
 
 router = APIRouter()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -22,6 +25,7 @@ class QueryRequest(BaseModel):
 
 class TextAnalyticsRequest(BaseModel):
     text: str = Field(..., example="Analyze this text for sentiment.")
+    task: str = Field("summarization", example="summarization")
 
 class GraphAnalyticsRequest(BaseModel):
     data: List[Dict[str, Any]] = Field(..., example=[{"x": 1, "y": 2}])
@@ -89,12 +93,18 @@ def execute_query(request: QueryRequest, db: Session = Depends(get_db), current_
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.post("/analytics/text", summary="Text Analytics", response_description="Text analytics result")
-def text_analytics(request: TextAnalyticsRequest, current_user: User = Depends(get_current_user)):
+async def text_analytics(request: TextAnalyticsRequest, current_user: User = Depends(get_current_user)):
     """
-    Performs text analytics (e.g., summarization, sentiment analysis).
+    Performs advanced text analytics using a configurable provider (e.g., OpenAI).
     """
-    summary = f"Summary of input: {request.text[:50]}..."
-    return {"summary": summary}
+    provider_name = os.getenv("TEXT_ANALYTICS_PROVIDER", "openai")
+    api_key = os.getenv("OPENAI_API_KEY", "")
+    provider = get_text_analytics_provider(provider_name, api_key=api_key)
+    try:
+        result = await provider.analyze(request.text, task=request.task)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Text analytics failed: {str(e)}")
 
 @router.post("/analytics/graph", summary="Graphical Analytics", response_description="Graphical analytics result")
 def graph_analytics(request: GraphAnalyticsRequest, current_user: User = Depends(get_current_user)):

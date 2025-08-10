@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.6] - 2025-08-10
+
+### Added
+- Implemented loosely coupled, extensible, and high-performant text analytics integration in [`backend/app/routes.py`](backend/app/routes.py:1) using provider abstraction from [`backend/app/analytics_providers.py`](backend/app/analytics_providers.py:1).
+- `/analytics/text` endpoint now supports configurable provider (e.g., OpenAI) and task type.
+
 ## [0.1.5] - 2025-08-10
 
 ### Security
