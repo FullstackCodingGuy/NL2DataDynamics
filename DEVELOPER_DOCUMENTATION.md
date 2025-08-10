@@ -4,12 +4,19 @@
 
 ### Backend Structure
 
-- [`backend/app/main.py`](backend/app/main.py:1): FastAPI app entry point, includes API routes and health check.
+- [`backend/app/main.py`](backend/app/main.py:1): FastAPI app entry point, includes API routes and health check. **Now imports routers from modular route files.**
 - [`backend/app/config.py`](backend/app/config.py:1): Configuration for environment variables, DB URL, secret key, token expiry.
 - [`backend/app/database.py`](backend/app/database.py:1): SQLAlchemy engine, session, and base model setup.
 - [`backend/app/models.py`](backend/app/models.py:1): User model with fields for username, email, hashed password, active status, and role.
 - [`backend/app/auth.py`](backend/app/auth.py:1): OAuth2/JWT authentication logic, token generation, user verification.
-- [`backend/app/routes.py`](backend/app/routes.py:1): API endpoints for user registration, login, and protected user info.
+- [`backend/app/routes.py`](backend/app/routes.py:1): **Legacy placeholder. All endpoints moved to modular files below.**
+- [`backend/app/routes/auth.py`](backend/app/routes/auth.py:1): Authentication endpoints (register, login).
+- [`backend/app/routes/user.py`](backend/app/routes/user.py:1): User info and role endpoints.
+- [`backend/app/routes/db.py`](backend/app/routes/db.py:1): Database query endpoint.
+- [`backend/app/routes/analytics.py`](backend/app/routes/analytics.py:1): Text and graphical analytics endpoints.
+- [`backend/app/routes/plugin.py`](backend/app/routes/plugin.py:1): Plugin registration and execution endpoints.
+- [`backend/app/routes/health.py`](backend/app/routes/health.py:1): Health check endpoint.
+- [`backend/app/analytics_providers.py`](backend/app/analytics_providers.py:1): Provider abstraction for text analytics (cloud and local LLM support).
 - [`backend/app/init_db.py`](backend/app/init_db.py:1): Script to initialize and seed the SQLite database.
 
 ### Authentication Flow
@@ -59,7 +66,7 @@
    ```
 3. Install dependencies inside the virtual environment:
    ```bash
-   pip install fastapi uvicorn sqlalchemy python-jose python-multipart "passlib[bcrypt]"
+   pip install fastapi uvicorn sqlalchemy python-jose python-multipart "passlib[bcrypt]" httpx
    ```
    **Tip:** If you use zsh and see `zsh: no matches found: passlib[bcrypt]`, wrap the package name in quotes as shown above.
 
@@ -86,8 +93,48 @@ To avoid import errors, always run Uvicorn from the project root directory (wher
 
 ### Environment Variables
 
-- Set `DB_URL` for your database connection string (default is SQLite).
+- Set `DATABASE_URL` for your database connection string (default is SQLite).
 - Set `SECRET_KEY` for JWT token signing.
+- Set `ALGORITHM` for JWT (default: HS256).
+- Set `ACCESS_TOKEN_EXPIRE_MINUTES` for token expiry (default: 30).
+- Set `TEXT_ANALYTICS_PROVIDER` to `openai` or `local`.
+- Set `OPENAI_API_KEY` for OpenAI integration.
+- Set `DEBUG` to `True` for development mode.
+
+#### Sample `.env` File
+
+Create a `.env` file in your project root with the following content:
+
+```env
+# API Configuration
+OPENAI_API_KEY=your_openai_api_key_here
+TEXT_ANALYTICS_PROVIDER=openai
+
+# Database Configuration
+DATABASE_URL=sqlite:///./test.db
+
+# JWT Configuration
+SECRET_KEY=your_secret_key_here
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+
+# Application Configuration
+DEBUG=True
+```
+
+#### Text Analytics Provider Configuration
+
+- To use OpenAI cloud LLM, set:
+  ```bash
+  export TEXT_ANALYTICS_PROVIDER=openai
+  export OPENAI_API_KEY=your_openai_api_key
+  ```
+- To use a local LLM (Ollama, LM Studio, etc.), set:
+  ```bash
+  export TEXT_ANALYTICS_PROVIDER=local
+  export LOCAL_LLM_ENDPOINT=http://localhost:11434/api/generate
+  ```
+- The `/analytics/text` endpoint will route requests to the selected provider.
 
 ---
 
@@ -108,4 +155,4 @@ To avoid import errors, always run Uvicorn from the project root directory (wher
 ### Next Steps
 
 - Implement analytics, plugin system, and frontend integration.
-- Update this documentation with each new feature, change, or enhancement.
+- **Update this documentation with each new feature, change, or enhancement.**
